@@ -1,0 +1,72 @@
+//README 
+9-19-2018
+BEWARE - THIS LAB WILL INCUR COSTS.
+
+//Versions Used:
+https://aws.amazon.com/blogs/opensource/horizontal-pod-autoscaling-eks/
+EKS: 1.10 eks.2
+Kube Nodes: amazon-eks-node-v24 (ami-0440e4f6b9713faf6)
+Metrics Server: 0.3.x metrics.k8s.io/v1beta1 1.8+
+
+Ensure you put a public key in the public_keys folder prior to terraforming.
+Name the key: kubenodes-test.pub
+
+//Generating an aws key pair via linux cli:
+openssl genrsa -out ~/.ssh/mykey.pem 2048
+chmod 400 ~/.ssh/*.pem
+ssh-keygen -y -f ~/.ssh/mykey.pem > ~/.ssh/mykey.pub
+
+//TERRAFORM CLI COMMANDS
+#make sure your iam terraform user has admin / apiadmin.
+basic terraform console commands:
+terraform init     - init terraform and detect new modules
+terraform validate - validate .tf config
+terraform plan     - create and review plan prior to .tf deploy
+terraform apply    - deploy .tf 
+terraform destroy  - destroys everything
+TF_LOG=DEBUG TF_LOG_PATH=terraform.log terraform plan - debug via cli
+
+#Note: port 443 must be open in the AWS security groups used for EKS for HPA to work.
+
+//EKS COMMAND TO JOIN WORKERS TO CLUSTER POST TERRAFORM APPLY
+#initial command to make nodes join master
+kubectl apply -f ~/output_files/eks/config-map-aws-auth.yaml
+
+//DEPLOY METRIC SERVER FOR HPA
+#download metric server
+#https://github.com/kubernetes-incubator/metrics-server/blob/master/README.md
+kubectl create -f deploy/1.8+/
+
+//TEST HPA & METRIC SERVER
+#https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
+
+//GIT EXCLUSIONS - ADD BELOW LINES TO YOUR GIT/INFO/EXCLUDE FILE
+#avoid storing credentials and state files in repository
+
+#terraform ignore
+*.txt
+*.dll
+*.exe
+.DS_Store
+example.tf
+terraform.tfplan
+terraform.tfstate
+bin/
+modules-dev/
+pkg/
+vendor/
+website/.vagrant
+website/build
+website/node_modules
+.vagrant/
+*.backup
+./*.tfstate
+.terraform/
+*.log
+*.bak
+*~
+.*.swp
+.idea
+
+//NOTE:
+Recommend moving credentials to .tfvar file, and storing state in s3 with dynamodb locking
