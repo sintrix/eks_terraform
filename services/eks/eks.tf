@@ -18,6 +18,13 @@ data "aws_iam_role" "AWSServiceRoleForAutoScaling" {
   name = "AWSServiceRoleForAutoScaling"
 }
 
+#if the above role does not exist either create it via gui or uncomment below
+/*
+resource "aws_iam_service_linked_role" "as" {
+  aws_service_name = "autoscaling.amazonaws.com"
+}
+*/
+
 //role creation and attach policy
 #create master node policy
 resource "aws_iam_role" "kube-master" {
