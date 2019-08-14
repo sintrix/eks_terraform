@@ -1,34 +1,35 @@
-//eks
-#https://www.terraform.io/docs/providers/aws/guides/eks-getting-started.html#eks-master-cluster
-#https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+# EKS
+# https://www.terraform.io/docs/providers/aws/guides/eks-getting-started.html#eks-master-cluster
+# https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
 
-#data ami
+# Data AMI
 data "aws_ami" "eks-worker" {
   filter {
     name   = "name"
-    values = ["amazon-eks-node-*"]
+    values = ["amazon-eks-node-${aws_eks_cluster.demo-eks.version}-v*"]
   }
 
   most_recent = true
-  owners      = ["602401143452"] # Amazon Account ID
+  owners      = ["602401143452"]
 }
 
-#data aws default roles
+# Data AWS Default roles
 data "aws_iam_role" "AWSServiceRoleForAutoScaling" {
   name = "AWSServiceRoleForAutoScaling"
 }
 
-#if the above role does not exist either create it via gui or uncomment below
-/*
-resource "aws_iam_service_linked_role" "as" {
-  aws_service_name = "autoscaling.amazonaws.com"
-}
-*/
+# If the above role does not exist. create it via gui or uncomment below
 
-//role creation and attach policy
-#create master node policy
+# resource "aws_iam_service_linked_role" "as" {
+#   aws_service_name = "autoscaling.amazonaws.com"
+# }
+
+##############
+# Master Role
+##############
+# Create role and attach policy for master node
 resource "aws_iam_role" "kube-master" {
-  name        = "terraform-eks-master-node"
+  name        = "demo-eks-master-node"
   description = "Allows EKS to manage clusters on your behalf."
 
   assume_role_policy = <<POLICY
@@ -57,9 +58,12 @@ resource "aws_iam_role_policy_attachment" "kube-master-AmazonEKSServicePolicy" {
   role       = "${aws_iam_role.kube-master.name}"
 }
 
-#create worker node policy
+##############
+# Worker Role
+##############
+# Worker node policy
 resource "aws_iam_role" "kube-node" {
-  name = "terraform-eks-kube-node"
+  name = "demo-eks-kube-node"
 
   assume_role_policy = <<POLICY
 {
@@ -92,58 +96,52 @@ resource "aws_iam_role_policy_attachment" "kube-node-AmazonEC2ContainerRegistryR
   role       = "${aws_iam_role.kube-node.name}"
 }
 
-#create instance profile
+##############
+# Cluster Info
+##############
+# Create instance profile
 resource "aws_iam_instance_profile" "kube-node" {
-  name = "terraform-eks-kube-node"
+  name = "demo-eks-kube-node"
   role = "${aws_iam_role.kube-node.name}"
 }
 
-//resource creation
-#Note: Used private subnets for this lab, you may want to use public subnets for teh masters.
-#See: https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html
-
-#create eks cluster (k8s master nodes)
-resource "aws_eks_cluster" "test-eks" {
+# Create EKS cluster
+# https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html
+resource "aws_eks_cluster" "demo-eks" {
   name     = "${var.cluster-name}"
   role_arn = "${aws_iam_role.kube-master.arn}"
 
   vpc_config {
-    subnet_ids         = ["${var.subnet_pri_a_id}", "${var.subnet_pri_b_id}", "${var.subnet_pri_c_id}"]
-    security_group_ids = ["${var.sg_kube_masters_id}"]
+    subnet_ids         = ["${var.subnet-public-a-id}", "${var.subnet-public-b-id}", "${var.subnet-public-c-id}"]
+    security_group_ids = ["${var.sg-kube-masters-id}"]
   }
 }
 
-//Create AutoScaling Launch Configuration
-#create autoscaling launch group
 
-//AWSServiceRoleForAutoScaling
-
-//note: need autoscale policy to scale up/down (policy currently not implemented)
-//scaling documentation: https://www.terraform.io/docs/providers/aws/r/autoscaling_policy.html
-//example: https://geekdudes.wordpress.com/2018/01/10/amazon-autosclaing-using-terraform/
-
-# This data source is included for ease of sample architecture deployment
-# and can be swapped out as necessary.
-data "aws_region" "current" {}
-
+##############
+# Auto-scaling
+##############
 # EKS currently documents this required userdata for EKS worker nodes to
 # properly configure Kubernetes applications on the EC2 instance.
+# Scaling documentation: https://www.terraform.io/docs/providers/aws/r/autoscaling_policy.html
+# Example: https://geekdudes.wordpress.com/2018/01/10/amazon-autosclaing-using-terraform/
 locals {
   kube-node-userdata = <<USERDATA
 #!/bin/bash
 set -o xtrace
-/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.test-eks.endpoint}' --b64-cluster-ca '${aws_eks_cluster.test-eks.certificate_authority.0.data}' '${var.cluster-name}'
+/etc/eks/bootstrap.sh --apiserver-endpoint '${aws_eks_cluster.demo-eks.endpoint}' --b64-cluster-ca '${aws_eks_cluster.demo-eks.certificate_authority.0.data}' '${var.cluster-name}'
 USERDATA
 }
 
+# Launch Config
 resource "aws_launch_configuration" "kube-nodes" {
-  associate_public_ip_address = false
+  associate_public_ip_address = true
   key_name                    = "${var.kubenodes-public-key}"
   iam_instance_profile        = "${aws_iam_instance_profile.kube-node.name}"
   image_id                    = "${data.aws_ami.eks-worker.id}"
-  instance_type               = "m4.large"
-  name_prefix                 = "terraform-eks-node"
-  security_groups             = ["${var.sg_kube_nodes_id}"]
+  instance_type               = "m5.large"
+  name_prefix                 = "demo-eks-node"
+  security_groups             = ["${var.sg-kube-nodes-id}"]
   user_data_base64            = "${base64encode(local.kube-node-userdata)}"
 
   lifecycle {
@@ -151,24 +149,24 @@ resource "aws_launch_configuration" "kube-nodes" {
   }
 }
 
-//Create AutoScaling Group
-#https://www.terraform.io/docs/providers/aws/r/autoscaling_group.html
+# Autoscaling Group
+# https://www.terraform.io/docs/providers/aws/r/autoscaling_group.html
+# Verify the policy below.
 resource "aws_autoscaling_group" "kube-nodes" {
-  desired_capacity        = 3
   launch_configuration    = "${aws_launch_configuration.kube-nodes.id}"
-  max_size                = 6
+  desired_capacity        = "3"
+  max_size                = 10
   min_size                = 3
-  name                    = "terraform-eks-nodes"
-  vpc_zone_identifier     = ["${var.subnet_pri_a_id}", "${var.subnet_pri_b_id}", "${var.subnet_pri_c_id}"]
+  name                    = "demo-eks-nodes"
+  vpc_zone_identifier     = ["${var.subnet-public-a-id}", "${var.subnet-public-b-id}", "${var.subnet-public-c-id}"]
   service_linked_role_arn = "${data.aws_iam_role.AWSServiceRoleForAutoScaling.arn}"
-
-  #VERIFY THE ABOVE POLICY!
 
   tag {
     key                 = "Name"
-    value               = "terraform-eks-nodes"
+    value               = "${var.cluster-name}-${var.deployment-env}-node"
     propagate_at_launch = true
   }
+
   tag {
     key                 = "kubernetes.io/cluster/${var.cluster-name}"
     value               = "owned"

@@ -1,12 +1,13 @@
-//network 
-resource "aws_vpc" "terraformmain" {
+# Network
+resource "aws_vpc" "demo-eks-vpc" {
   cidr_block = "${var.vpc-fullcidr}"
 
-  #2 true values = use the internal vpc dns resolution
+  # Used for the internal VPC DNS resolution
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags {
-    Name = "mylab-${var.deployment_env}"
+  tags = {
+    Name                                        = "demo-eks-${var.deployment-env}"
+    "kubernetes.io/cluster/${var.cluster-name}" = "shared"
   }
 }

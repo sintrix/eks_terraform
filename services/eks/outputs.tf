@@ -1,14 +1,11 @@
-//eks outputs
-
-#This outputs your kubeconfig for kubectl
+# This outputs your kubeconfig for kubectl
 locals {
   kubeconfig = <<KUBECONFIG
-
 apiVersion: v1
 clusters:
 - cluster:
-    server: ${aws_eks_cluster.test-eks.endpoint}
-    certificate-authority-data: ${aws_eks_cluster.test-eks.certificate_authority.0.data}
+    server: ${aws_eks_cluster.demo-eks.endpoint}
+    certificate-authority-data: ${aws_eks_cluster.demo-eks.certificate_authority.0.data}
   name: kubernetes
 contexts:
 - context:
@@ -31,17 +28,12 @@ users:
 KUBECONFIG
 }
 
-/*
-Required Kubernetes Configuration to Join Worker Nodes
-
-The EKS service does not provide a cluster-level API parameter or resource 
-to automatically configure the underlying Kubernetes cluster to allow worker 
-nodes to join the cluster via AWS IAM role authentication.
-*/
-
+# Required Kubernetes Configuration to Join Worker Nodes
+# The EKS service does not provide a cluster-level API parameter or resource
+# to automatically configure the underlying Kubernetes cluster to allow worker
+# nodes to join the cluster via AWS IAM role authentication.
 locals {
   config-map-aws-auth = <<CONFIGMAPAWSAUTH
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -57,13 +49,13 @@ data:
 CONFIGMAPAWSAUTH
 }
 
-#create output files
+# Create output files
 resource "local_file" "kubeconfig" {
   content  = "${local.kubeconfig}"
-  filename = "./output_files/eks/kubeconfig.yaml"
+  filename = "./output-files/eks/kubeconfig.yaml"
 }
 
 resource "local_file" "config-map-aws-auth" {
   content  = "${local.config-map-aws-auth}"
-  filename = "./output_files/eks/config-map-aws-auth.yaml"
+  filename = "./output-files/eks/config-map-aws-auth.yaml"
 }
