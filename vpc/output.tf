@@ -1,24 +1,21 @@
-//vpc output
-#subnet output vars
-
-output "subnet_pri_a_id" {
-  value = "${aws_subnet.subnet-pri-a.id}"
+# Subnet output variables
+output "subnet-public-a-id" {
+  value = "${aws_subnet.subnet-public-a.id}"
 }
 
-output "subnet_pri_b_id" {
-  value = "${aws_subnet.subnet-pri-b.id}"
+output "subnet-public-b-id" {
+  value = "${aws_subnet.subnet-public-b.id}"
 }
 
-output "subnet_pri_c_id" {
-  value = "${aws_subnet.subnet-pri-c.id}"
+output "subnet-public-c-id" {
+  value = "${aws_subnet.subnet-public-c.id}"
 }
 
-#security group output vars
-
-output "sg_kube_nodes_id" {
-  value = "${aws_security_group.kube-nodes.id}"
-}
-
-output "sg_kube_masters_id" {
+# Security group output variables
+output "sg-kube-masters-id" {
   value = "${aws_security_group.kube-masters.id}"
+}
+
+output "sg-kube-nodes-id" {
+  value = "${aws_security_group.kube-nodes.id}"
 }

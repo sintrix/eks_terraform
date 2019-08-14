@@ -1,14 +1,19 @@
-//eks vars
-variable "sg_kube_masters_id" {}
-
-variable "sg_kube_nodes_id" {}
-
-variable "subnet_pri_a_id" {}
-
-variable "subnet_pri_b_id" {}
-
-variable "subnet_pri_c_id" {}
-
-variable "kubenodes-public-key" {}
+# Deployment
+variable "deployment-env" {}
 
 variable "cluster-name" {}
+
+# Security Groups
+variable "sg-kube-masters-id" {}
+
+variable "sg-kube-nodes-id" {}
+
+# Networking
+variable "subnet-public-a-id" {}
+
+variable "subnet-public-b-id" {}
+
+variable "subnet-public-c-id" {}
+
+# Keypair
+variable "kubenodes-public-key" {}

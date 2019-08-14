@@ -1,2 +1,2 @@
-//ec2 vars
-variable "deployment_env" {}
+# EC2
+variable "deployment-env" {}

@@ -1,29 +1,19 @@
-//VARIABLES MAIN
-
-#auth variables
+# Auth
 variable "aws-region" {
-  default = "us-east-1"
+  default = "us-east-2"
 }
 
-variable "aws_access_key" {
-  default = ""
-}
-
-variable "aws_secret_key" {
-  default = ""
-}
-
-#env variables
-variable "deployment_env" {
+# ENV
+variable "deployment-env" {
   default = "test"
 }
 
-variable "root_domain_name" {
-  default     = "test.cloud"
-  description = "internal dns name"
+variable "root-domain-name" {
+  default     = "demo.eks"
+  description = "Internal DNS name"
 }
 
-#network variables
+# Network
 variable "vpc-fullcidr" {
   default = "10.30.0.0/16"
 }
@@ -52,12 +42,8 @@ variable "subnet-private-c-cidr" {
   default = "10.30.103.0/24"
 }
 
-variable "AWS_VPC_enable_nat_gateway" {
-  default = "true"
-}
-
-#eks vars
+# EKS
 variable "cluster-name" {
-  default = "eks-test"
+  default = "demo-eks"
   type    = "string"
 }
